@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FlowState — Smart Stadium Operations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0a0c0f;
+    --bg2: #11141a;
+    --bg3: #181c24;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #f0f2f5;
+    --text2: #8a90a0;
+    --text3: #50576a;
+    --accent: #3b82f6;
+    --accent2: #60a5fa;
+    --green: #22c55e;
+    --amber: #f59e0b;
+    --red: #ef4444;
+    --teal: #14b8a6;
+    --mono: 'Space Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; overflow-x: hidden; }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: var(--bg2); } ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  /* ── LAYOUT ── */
+  .shell { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+
+  /* ── SIDEBAR ── */
+  .sidebar { background: var(--bg2); border-right: 1px solid var(--border); padding: 20px 0; display: flex; flex-direction: column; }
+  .sidebar-logo { padding: 0 20px 20px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+  .logo-mark { width: 36px; height: 36px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; }
+  .logo-mark svg { width: 20px; height: 20px; }
+  .logo-title { font-size: 16px; font-weight: 600; letter-spacing: -0.4px; }
+  .logo-sub { font-size: 11px; color: var(--text3); font-family: var(--mono); margin-top: 2px; }
+  .live-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--green); font-family: var(--mono); margin-top: 8px; }
+  .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: blink 1.4s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .nav-section { padding: 0 12px; margin-bottom: 4px; }
+  .nav-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.8px; padding: 0 8px; margin-bottom: 4px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 7px; font-size: 13px; color: var(--text2); cursor: pointer; transition: all 0.15s; border: none; background: none; width: 100%; text-align: left; }
+  .nav-item:hover { background: rgba(255,255,255,0.04); color: var(--text); }
+  .nav-item.active { background: rgba(59,130,246,0.12); color: var(--accent2); }
+  .nav-item svg { width: 15px; height: 15px; opacity: 0.7; flex-shrink: 0; }
+  .nav-item.active svg { opacity: 1; }
+
+  .sidebar-footer { margin-top: auto; padding: 16px 20px 0; border-top: 1px solid var(--border); }
+  .venue-info { font-size: 11px; color: var(--text3); line-height: 1.6; }
+
+  /* ── MAIN ── */
+  .main { display: flex; flex-direction: column; overflow: hidden; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; border-bottom: 1px solid var(--border); background: var(--bg2); }
+  .topbar-title { font-size: 14px; font-weight: 500; }
+  .topbar-time { font-family: var(--mono); font-size: 13px; color: var(--text2); }
+  .topbar-actions { display: flex; align-items: center; gap: 8px; }
+  .btn { padding: 6px 14px; border-radius: 7px; font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid var(--border2); background: transparent; color: var(--text2); font-family: var(--sans); transition: all 0.15s; }
+  .btn:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.primary:hover { background: #2563eb; }
+
+  .content { flex: 1; padding: 20px 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+
+  /* ── PAGES ── */
+  .page { display: none; flex-direction: column; gap: 16px; }
+  .page.active { display: flex; }
+
+  /* ── METRICS ── */
+  .metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .metric-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .metric-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .metric-val { font-size: 26px; font-weight: 600; font-family: var(--mono); color: var(--text); line-height: 1; }
+  .metric-delta { font-size: 11px; margin-top: 5px; }
+  .up { color: var(--green); } .down { color: var(--red); } .warn { color: var(--amber); } .info { color: var(--accent2); }
+
+  /* ── GRID PANELS ── */
+  .panel-row { display: grid; grid-template-columns: 1fr 300px; gap: 14px; }
+  .panel { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+  .panel-title { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px; font-weight: 500; }
+
+  /* ── STADIUM SVG ── */
+  .stadium-wrap { position: relative; }
+  .zone-tooltip { position: absolute; background: var(--bg3); border: 1px solid var(--border2); border-radius: 7px; padding: 8px 12px; font-size: 12px; pointer-events: none; opacity: 0; transition: opacity 0.15s; z-index: 10; min-width: 140px; }
+  .zone-tooltip.show { opacity: 1; }
+
+  /* ── ZONE BARS ── */
+  .zone-row { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
+  .zone-name { font-size: 11px; color: var(--text2); width: 70px; flex-shrink: 0; }
+  .zone-track { flex: 1; height: 5px; border-radius: 3px; background: rgba(255,255,255,0.05); overflow: hidden; }
+  .zone-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+  .zone-pct { font-size: 11px; font-family: var(--mono); color: var(--text3); width: 34px; text-align: right; }
+
+  /* ── ALERTS ── */
+  .alert-item { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .alert-item:last-child { border-bottom: none; }
+  .alert-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+  .alert-body { flex: 1; }
+  .alert-msg { font-size: 12px; color: var(--text); line-height: 1.45; }
+  .alert-meta { display: flex; gap: 8px; margin-top: 3px; }
+  .alert-tag { font-size: 10px; font-family: var(--mono); color: var(--text3); }
+
+  /* ── FAN APP ── */
+  .phone-frame { width: 300px; margin: 0 auto; background: var(--bg3); border: 1px solid var(--border2); border-radius: 28px; overflow: hidden; box-shadow: 0 0 0 6px var(--bg2); }
+  .phone-status { display: flex; justify-content: space-between; padding: 10px 16px 6px; font-size: 10px; font-family: var(--mono); color: var(--text3); }
+  .phone-content { padding: 12px 16px 20px; }
+  .app-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .app-title { font-size: 15px; font-weight: 600; }
+  .coin-chip { display: flex; align-items: center; gap: 5px; background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.25); color: var(--amber); font-size: 11px; font-family: var(--mono); padding: 4px 10px; border-radius: 20px; }
+  .ar-card { background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(20,184,166,0.1)); border: 1px solid rgba(59,130,246,0.25); border-radius: 10px; padding: 12px; margin-bottom: 10px; }
+  .ar-title { font-size: 12px; font-weight: 500; color: var(--accent2); }
+  .ar-sub { font-size: 11px; color: var(--text2); margin-top: 3px; line-height: 1.4; }
+  .ar-nav-btn { display: block; margin-top: 10px; text-align: center; background: var(--accent); color: #fff; border-radius: 7px; padding: 7px; font-size: 12px; font-weight: 500; cursor: pointer; border: none; width: 100%; font-family: var(--sans); }
+  .concession-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .concession-item:last-child { border-bottom: none; }
+  .con-name { font-size: 12px; color: var(--text); }
+  .con-loc { font-size: 10px; color: var(--text3); margin-top: 1px; }
+  .wait-badge { font-size: 10px; font-family: var(--mono); padding: 3px 8px; border-radius: 5px; }
+  .w-low { background: rgba(34,197,94,0.12); color: var(--green); }
+  .w-med { background: rgba(245,158,11,0.12); color: var(--amber); }
+  .w-high { background: rgba(239,68,68,0.12); color: var(--red); }
+  .deal-banner { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); border-radius: 8px; padding: 8px 10px; margin-top: 10px; }
+  .deal-title { font-size: 11px; font-weight: 500; color: var(--amber); }
+  .deal-sub { font-size: 10px; color: var(--text3); margin-top: 2px; }
+
+  /* ── JOURNEY ── */
+  .journey-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .journey-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 14px; position: relative; }
+  .journey-card::after { content: ''; position: absolute; right: -7px; top: 50%; transform: translateY(-50%); width: 12px; height: 12px; border-right: 1.5px solid var(--border2); border-top: 1.5px solid var(--border2); transform: translateY(-50%) rotate(45deg); }
+  .journey-card:last-child::after, .journey-card:nth-child(3)::after { display: none; }
+  .journey-num { width: 24px; height: 24px; border-radius: 50%; background: rgba(59,130,246,0.15); color: var(--accent2); font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; font-family: var(--mono); }
+  .journey-title { font-size: 13px; font-weight: 500; margin-bottom: 5px; }
+  .journey-desc { font-size: 11px; color: var(--text2); line-height: 1.5; }
+  .journey-tech { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px; }
+  .tech-pill { font-size: 10px; font-family: var(--mono); padding: 2px 7px; border-radius: 4px; background: rgba(255,255,255,0.04); color: var(--text3); border: 1px solid var(--border); }
+
+  /* ── PRIVACY PAGE ── */
+  .privacy-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .privacy-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+  .priv-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
+  .priv-title { font-size: 13px; font-weight: 500; margin-bottom: 6px; }
+  .priv-desc { font-size: 12px; color: var(--text2); line-height: 1.55; }
+  .priv-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-family: var(--mono); padding: 3px 8px; border-radius: 4px; margin-top: 8px; }
+
+  /* ── ARCH PAGE ── */
+  .arch-layers { display: flex; flex-direction: column; gap: 10px; }
+  .arch-layer { display: grid; grid-template-columns: 120px 1fr; gap: 14px; align-items: center; }
+  .arch-label { font-size: 11px; font-family: var(--mono); color: var(--text3); text-align: right; }
+  .arch-nodes { display: flex; gap: 8px; flex-wrap: wrap; }
+  .arch-node { background: var(--bg3); border: 1px solid var(--border2); border-radius: 7px; padding: 7px 12px; font-size: 11px; color: var(--text); }
+  .arch-arrow { text-align: center; color: var(--text3); font-size: 16px; margin: 2px 0; }
+
+  /* ── CHART ── */
+  .chart-wrap { position: relative; width: 100%; }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeIn { from { opacity:0; transform: translateY(6px); } to { opacity:1; transform:none; } }
+  .page.active > * { animation: fadeIn 0.2s ease forwards; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    .shell { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+    .metric-grid { grid-template-columns: repeat(2, 1fr); }
+    .panel-row { grid-template-columns: 1fr; }
+    .journey-grid { grid-template-columns: repeat(2, 1fr); }
+    .privacy-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="10" r="8" stroke="#fff" stroke-width="1.5"/>
+          <path d="M6.5 10.5L9.5 13.5L14 6.5" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="logo-title">FlowState</div>
+      <div class="logo-sub">Stadium Platform v1.0</div>
+      <div class="live-chip"><span class="live-dot"></span>LIVE FEED</div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Operations</div>
+      <button class="nav-item active" onclick="navigate('ops',this)">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.2"/><rect x="9" y="1" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.2"/><rect x="1" y="9" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.2"/><rect x="9" y="9" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.2"/></svg>
+        Dashboard
+      </button>
+      <button class="nav-item" onclick="navigate('alerts',this)">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M8 1.5C5.5 1.5 3.5 3.5 3.5 6v4.5L2 12h12l-1.5-1.5V6C12.5 3.5 10.5 1.5 8 1.5Z" stroke="currentColor" stroke-width="1.2"/><path d="M6.5 12.5c0 .8.7 1.5 1.5 1.5s1.5-.7 1.5-1.5" stroke="currentColor" stroke-width="1.2"/></svg>
+        Live Alerts
+      </button>
+      <button class="nav-item" onclick="navigate('arch',this)">
+        <svg viewBox="0 0 16 16" fill="none"><circle cx="3" cy="8" r="1.5" stroke="currentColor" stroke-width="1.2"/><circle cx="8" cy="3" r="1.5" stroke="currentColor" stroke-width="1.2"/><circle cx="13" cy="8" r="1.5" stroke="currentColor" stroke-width="1.2"/><circle cx="8" cy="13" r="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M4.5 8H6.5M9.5 8H11.5M8 4.5V6.5M8 9.5V11.5" stroke="currentColor" stroke-width="1.2"/></svg>
+        Architecture
+      </button>
+    </div>
+
+    <div class="nav-section" style="margin-top:12px">
+      <div class="nav-label">Attendee</div>
+      <button class="nav-item" onclick="navigate('fan',this)">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="3" y="1" width="10" height="14" rx="2" stroke="currentColor" stroke-width="1.2"/><path d="M6 4h4M6 7h4M6 10h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        Fan App
+      </button>
+      <button class="nav-item" onclick="navigate('journey',this)">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M2 8h12M10 4l4 4-4 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        User Journey
+      </button>
+    </div>
+
+    <div class="nav-section" style="margin-top:12px">
+      <div class="nav-label">Compliance</div>
+      <button class="nav-item" onclick="navigate('privacy',this)">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M8 1.5L2.5 4v4c0 3 2.5 5.5 5.5 6.3C11 13.5 13.5 11 13.5 8V4L8 1.5Z" stroke="currentColor" stroke-width="1.2"/><path d="M5.5 8l1.8 1.8L10.5 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Privacy & Safety
+      </button>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="venue-info">
+        Riverside Arena<br/>
+        62,400 capacity<br/>
+        <span style="color: var(--green)">●</span> All systems nominal
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="page-title">Operations Dashboard</div>
+      <div class="topbar-actions">
+        <div class="topbar-time" id="clock">--:--:--</div>
+        <button class="btn" onclick="toggleEmergency()">Emergency Mode</button>
+        <button class="btn primary" onclick="exportReport()">Export Report</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ── OPS PAGE ── -->
+      <div class="page active" id="page-ops">
+        <div class="metric-grid">
+          <div class="metric-card">
+            <div class="metric-label">Occupancy</div>
+            <div class="metric-val" id="m-occ">87%</div>
+            <div class="metric-delta up" id="m-occ-d">54,288 / 62,400</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Avg wait time</div>
+            <div class="metric-val" id="m-wait">4.2m</div>
+            <div class="metric-delta up">↓ 1.1m from peak</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Active reroutes</div>
+            <div class="metric-val warn" id="m-reroute">12</div>
+            <div class="metric-delta warn">2 gates congested</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">FlowCoins issued</div>
+            <div class="metric-val info" id="m-coins">3,841</div>
+            <div class="metric-delta up">↑ 214 this half</div>
+          </div>
+        </div>
+
+        <div class="panel-row">
+          <div class="panel">
+            <div class="panel-title">Digital twin — live crowd density</div>
+            <div class="stadium-wrap">
+              <div class="zone-tooltip" id="tooltip"></div>
+              <svg viewBox="0 0 520 300" width="100%" style="cursor:default">
+                <!-- outer boundary -->
+                <rect x="2" y="2" width="516" height="296" rx="10" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+                <!-- pitch -->
+                <rect x="155" y="85" width="210" height="130" rx="6" fill="rgba(20,184,166,0.06)" stroke="rgba(20,184,166,0.2)" stroke-width="1"/>
+                <text x="260" y="155" fill="rgba(20,184,166,0.3)" font-size="10" font-family="'Space Mono',monospace" text-anchor="middle">PITCH</text>
+                <!-- north -->
+                <rect x="155" y="24" width="210" height="52" rx="5" fill="rgba(34,197,94,0.12)" stroke="rgba(34,197,94,0.25)" stroke-width="1" class="zone-hover" data-zone="North Stand" data-pct="58" onmouseenter="showTip(event,'North Stand','58%','Low density — 2 min wait')" onmouseleave="hideTip()"/>
+                <text x="260" y="52" fill="rgba(34,197,94,0.7)" font-size="9" font-family="'Space Mono',monospace" text-anchor="middle" pointer-events="none">NORTH · 58%</text>
+                <!-- south -->
+                <rect x="155" y="224" width="100" height="52" rx="5" fill="rgba(34,197,94,0.12)" stroke="rgba(34,197,94,0.2)" stroke-width="1" class="zone-hover" data-zone="South A" data-pct="54" onmouseenter="showTip(event,'South A','54%','Low — 3 min wait')" onmouseleave="hideTip()"/>
+                <text x="205" y="253" fill="rgba(34,197,94,0.6)" font-size="9" font-family="'Space Mono',monospace" text-anchor="middle" pointer-events="none">S-A · 54%</text>
+                <rect x="265" y="224" width="100" height="52" rx="5" fill="rgba(34,197,94,0.1)" stroke="rgba(34,197,94,0.18)" stroke-width="1" class="zone-hover" onmouseenter="showTip(event,'South B','41%','Very low — 1 min wait')" onmouseleave="hideTip()"/>
+                <text x="315" y="253" fill="rgba(34,197,94,0.5)" font-size="9" font-family="'Space Mono',monospace" text-anchor="middle" pointer-events="none">S-B · 41%</text>
+                <!-- west lower -->
+                <rect x="28" y="120" width="80" height="60" rx="5" fill="rgba(34,197,94,0.14)" stroke="rgba(34,197,94,0.3)" stroke-width="1" onmouseenter="showTip(event,'West Lower','58%','Moderate — 4 min')" onmouseleave="hideTip()"/>
+                <text x="68" y="152" fill="rgba(34,197,94,0.7)" font-size="9" font-family="'Space Mono',monospace" text-anchor="middle" pointer-events="none">W-LWR·58%</text>
+                <!-- east lower -->
+                <rect x="412" y="120" width="80" height="60" rx="5" fill="rgba(245,158,11,0.18)" stroke="rgba(245,158,11,0.4)" stroke-width="1" onmouseenter="showTip(event,'East Lower','82%','High — 8 min wait')" onmouseleave="hideTip()"/>
+                <text x="452" y="152" fill="rgba(245,158,11,0.9)" font-size="9" font-family="'Space Mono',monospace" text-anchor="middle" pointer-events="none">E-LWR·82%</text>
+                <!-- NW -->
+                <rect x="28" y="40" width="100" height="68" rx="5" fill="rgba(34,197,94,0.12)" stroke="rgba(34,197,94,0.22)" stroke-width="1" onmouseenter="showTip(event,'NW Stand','43%','Low — 2 min wait')" onmouseleave="hideTip()"/>
+                <text x="78" y="76" fill="rgba(34,197,94,0.6)" font-size="9" font-family="'Space Mono',monospace" text-anchor="middle" pointer-events="none">NW · 43%</text>
+                <!-- NE -->
+                <rect x="392" y="40" width="100" height="68" rx="5" fill="rgba(34,197,94,0.16)" stroke="rgba(34,197,94,0.28)" stroke-width="1" onmouseenter="showTip(event,'NE Stand','61%','Moderate — 5 min')" onmouseleave="hideTip()"/>
+                <text x="442" y="76" fill="rgba(34,197,94,0.7)" font-size="9" font-family="'Space Mono',monospace" text-anchor="middle" pointer-events="none">NE · 61%</text>
+                <!-- SW — CRITICAL -->
+                <rect x="28" y="192" width="100" height="80" rx="5" fill="rgba(239,68,68,0.22)" stroke="rgba(239,68,68,0.6)" stroke-width="1.5" onmouseenter="showTip(event,'SW Stand','98%','CRITICAL — 14 min wait')" onmouseleave="hideTip()"/>
+                <text x="78" y="232" fill="rgba(239,68,68,0.95)" font-size="9" font-family="'Space Mono',monospace" text-anchor="middle" pointer-events="none">SW · 98%</text>
+                <circle cx="78" cy="246" r="5" fill="rgba(239,68,68,0.8)"><animate attributeName="r" values="5;10;5" dur="1.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.8;0.2;0.8" dur="1.4s" repeatCount="indefinite"/></circle>
+                <!-- SE -->
+                <rect x="392" y="192" width="100" height="80" rx="5" fill="rgba(245,158,11,0.16)" stroke="rgba(245,158,11,0.35)" stroke-width="1" onmouseenter="showTip(event,'SE Stand','79%','High — 9 min wait')" onmouseleave="hideTip()"/>
+                <text x="442" y="232" fill="rgba(245,158,11,0.85)" font-size="9" font-family="'Space Mono',monospace" text-anchor="middle" pointer-events="none">SE · 79%</text>
+                <!-- legend -->
+                <rect x="12" y="282" width="10" height="8" rx="1" fill="rgba(34,197,94,0.5)"/>
+                <text x="26" y="290" fill="rgba(255,255,255,0.3)" font-size="8" font-family="'DM Sans',sans-serif">Low</text>
+                <rect x="56" y="282" width="10" height="8" rx="1" fill="rgba(245,158,11,0.5)"/>
+                <text x="70" y="290" fill="rgba(255,255,255,0.3)" font-size="8" font-family="'DM Sans',sans-serif">High</text>
+                <rect x="100" y="282" width="10" height="8" rx="1" fill="rgba(239,68,68,0.6)"/>
+                <text x="114" y="290" fill="rgba(255,255,255,0.3)" font-size="8" font-family="'DM Sans',sans-serif">Critical</text>
+                <text x="430" y="290" fill="rgba(255,255,255,0.2)" font-size="8" font-family="'Space Mono',monospace">hover zones for detail</text>
+              </svg>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div class="panel">
+              <div class="panel-title">Zone capacity</div>
+              <div id="zone-bars-container"></div>
+            </div>
+            <div class="panel">
+              <div class="panel-title">Live alerts</div>
+              <div id="alerts-feed"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">Concession wait times — all stands</div>
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px" id="concessions-grid"></div>
+        </div>
+      </div>
+
+      <!-- ── ALERTS PAGE ── -->
+      <div class="page" id="page-alerts">
+        <div class="panel">
+          <div class="panel-title">All system alerts — real-time feed</div>
+          <div id="all-alerts-feed"></div>
+        </div>
+      </div>
+
+      <!-- ── ARCHITECTURE PAGE ── -->
+      <div class="page" id="page-arch">
+        <div class="panel">
+          <div class="panel-title">System architecture — FlowState layers</div>
+          <div class="arch-layers">
+            <div class="arch-layer">
+              <div class="arch-label">IoT / Sensors</div>
+              <div class="arch-nodes">
+                <div class="arch-node" style="border-color:rgba(59,130,246,0.3);color:var(--accent2)">Smart cameras (CV)</div>
+                <div class="arch-node" style="border-color:rgba(59,130,246,0.3);color:var(--accent2)">BLE beacons</div>
+                <div class="arch-node" style="border-color:rgba(59,130,246,0.3);color:var(--accent2)">RFID gates</div>
+                <div class="arch-node" style="border-color:rgba(59,130,246,0.3);color:var(--accent2)">Pressure mats</div>
+                <div class="arch-node" style="border-color:rgba(59,130,246,0.3);color:var(--accent2)">LiDAR depth sensors</div>
+              </div>
+            </div>
+            <div class="arch-arrow">↓</div>
+            <div class="arch-layer">
+              <div class="arch-label">Edge Computing</div>
+              <div class="arch-nodes">
+                <div class="arch-node" style="border-color:rgba(20,184,166,0.35);color:var(--teal)">NVIDIA Jetson nodes</div>
+                <div class="arch-node" style="border-color:rgba(20,184,166,0.35);color:var(--teal)">On-device CV inference</div>
+                <div class="arch-node" style="border-color:rgba(20,184,166,0.35);color:var(--teal)">Anonymized heat maps</div>
+              </div>
+            </div>
+            <div class="arch-arrow">↓</div>
+            <div class="arch-layer">
+              <div class="arch-label">Network</div>
+              <div class="arch-nodes">
+                <div class="arch-node" style="border-color:rgba(245,158,11,0.3);color:var(--amber)">Private 5G backbone</div>
+                <div class="arch-node" style="border-color:rgba(245,158,11,0.3);color:var(--amber)">Wi-Fi 6E failover</div>
+              </div>
+            </div>
+            <div class="arch-arrow">↓</div>
+            <div class="arch-layer">
+              <div class="arch-label">Cloud / Backend</div>
+              <div class="arch-nodes">
+                <div class="arch-node" style="border-color:rgba(168,85,247,0.3);color:#c084fc">Kubernetes on AWS</div>
+                <div class="arch-node" style="border-color:rgba(168,85,247,0.3);color:#c084fc">Redis real-time cache</div>
+                <div class="arch-node" style="border-color:rgba(168,85,247,0.3);color:#c084fc">AI prediction engine</div>
+                <div class="arch-node" style="border-color:rgba(168,85,247,0.3);color:#c084fc">Digital twin renderer</div>
+              </div>
+            </div>
+            <div class="arch-arrow">↓</div>
+            <div class="arch-layer">
+              <div class="arch-label">Client Layer</div>
+              <div class="arch-nodes">
+                <div class="arch-node" style="border-color:rgba(34,197,94,0.3);color:var(--green)">FlowState Web Dashboard</div>
+                <div class="arch-node" style="border-color:rgba(34,197,94,0.3);color:var(--green)">React Native fan app</div>
+                <div class="arch-node" style="border-color:rgba(34,197,94,0.3);color:var(--green)">ARCore / ARKit</div>
+                <div class="arch-node" style="border-color:rgba(34,197,94,0.3);color:var(--green)">PA system integration</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── FAN APP PAGE ── -->
+      <div class="page" id="page-fan">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
+          <div class="phone-frame">
+            <div class="phone-status">
+              <span>9:41</span><span>●●●●</span>
+            </div>
+            <div class="phone-content">
+              <div class="app-header">
+                <div class="app-title">FlowState</div>
+                <div class="coin-chip">★ 340</div>
+              </div>
+              <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:12px">Seat 47B · North Upper · Riverside Arena</div>
+              <div class="ar-card">
+                <div class="ar-title">AR Navigation — Reroute suggested</div>
+                <div class="ar-sub">Gate D is at 98% capacity. Take Gate C to save ~9 min and earn 20 FlowCoins.</div>
+                <button class="ar-nav-btn">Start AR navigation → Gate C</button>
+              </div>
+              <div class="panel-title" style="margin-bottom:10px">Concession wait times</div>
+              <div class="concession-item"><div><div class="con-name">Stand W3 — Hot dogs</div><div class="con-loc">West concourse · 80m away</div></div><span class="wait-badge w-low">2 min</span></div>
+              <div class="concession-item"><div><div class="con-name">Stand N1 — Drinks</div><div class="con-loc">North concourse · 140m</div></div><span class="wait-badge w-med">6 min</span></div>
+              <div class="concession-item"><div><div class="con-name">Stand E2 — Burgers</div><div class="con-loc">East concourse · 220m</div></div><span class="wait-badge w-high">11 min</span></div>
+              <div class="deal-banner">
+                <div class="deal-title">15% off at Stand W3 — ends in 7 min</div>
+                <div class="deal-sub">Dynamic pricing · Low-density zone incentive</div>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div class="panel">
+              <div class="panel-title">FlowCoins economy</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div style="background:var(--bg3);border-radius:8px;padding:12px"><div class="metric-label">Total issued today</div><div class="metric-val info" style="font-size:22px">3,841</div></div>
+                <div style="background:var(--bg3);border-radius:8px;padding:12px"><div class="metric-label">Active users</div><div class="metric-val" style="font-size:22px">2,104</div></div>
+                <div style="background:var(--bg3);border-radius:8px;padding:12px"><div class="metric-label">Reroutes followed</div><div class="metric-val up" style="font-size:22px">687</div></div>
+                <div style="background:var(--bg3);border-radius:8px;padding:12px"><div class="metric-label">Redemptions</div><div class="metric-val warn" style="font-size:22px">143</div></div>
+              </div>
+            </div>
+            <div class="panel">
+              <div class="panel-title">Gamification achievements</div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;align-items:center;gap:10px;padding:8px;background:var(--bg3);border-radius:7px"><div style="font-size:18px">🏃</div><div><div style="font-size:12px;font-weight:500">Flow Master</div><div style="font-size:11px;color:var(--text3)">Follow 5 reroute suggestions · 127 unlocked</div></div></div>
+                <div style="display:flex;align-items:center;gap:10px;padding:8px;background:var(--bg3);border-radius:7px"><div style="font-size:18px">🌿</div><div><div style="font-size:12px;font-weight:500">Green Mover</div><div style="font-size:11px;color:var(--text3)">Visit 3 low-density zones · 84 unlocked</div></div></div>
+                <div style="display:flex;align-items:center;gap:10px;padding:8px;background:var(--bg3);border-radius:7px"><div style="font-size:18px">⚡</div><div><div style="font-size:12px;font-weight:500">Early Exit</div><div style="font-size:11px;color:var(--text3)">Leave before 85% rush · 41 unlocked</div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── JOURNEY PAGE ── -->
+      <div class="page" id="page-journey">
+        <div class="journey-grid">
+          <div class="journey-card"><div class="journey-num">1</div><div class="journey-title">Pre-arrival</div><div class="journey-desc">App predicts optimal entry gate using live traffic, parking sensor data and forecast crowd density.</div><div class="journey-tech"><span class="tech-pill">GPS</span><span class="tech-pill">Traffic API</span><span class="tech-pill">Push alerts</span></div></div>
+          <div class="journey-card"><div class="journey-num">2</div><div class="journey-title">Entry & scan</div><div class="journey-desc">QR or RFID ticket scan links the fan session. Optional facial recognition fast-lane for enrolled users.</div><div class="journey-tech"><span class="tech-pill">RFID</span><span class="tech-pill">QR scan</span><span class="tech-pill">Opt-in FaceID</span></div></div>
+          <div class="journey-card"><div class="journey-num">3</div><div class="journey-title">AR wayfinding</div><div class="journey-desc">Phone camera renders directional AR overlays, routing attendees via the least congested corridor.</div><div class="journey-tech"><span class="tech-pill">ARCore</span><span class="tech-pill">ARKit</span><span class="tech-pill">BLE positioning</span></div></div>
+          <div class="journey-card"><div class="journey-num">4</div><div class="journey-title">In-event UX</div><div class="journey-desc">Real-time concession wait times, restroom queues, order-ahead, and dynamic discount nudges.</div><div class="journey-tech"><span class="tech-pill">IoT sensors</span><span class="tech-pill">POS API</span><span class="tech-pill">Redis streams</span></div></div>
+          <div class="journey-card"><div class="journey-num">5</div><div class="journey-title">Gamification</div><div class="journey-desc">FlowCoins earned for following reroutes, off-peak concession visits, and low-density zone exploration.</div><div class="journey-tech"><span class="tech-pill">FlowCoins ledger</span><span class="tech-pill">Leaderboard</span><span class="tech-pill">Merch API</span></div></div>
+          <div class="journey-card"><div class="journey-num">6</div><div class="journey-title">Post-match exit</div><div class="journey-desc">Digital twin predicts crowd surge 5 min ahead. Gradient lighting + AR guide staggered departure waves.</div><div class="journey-tech"><span class="tech-pill">Predictive AI</span><span class="tech-pill">PA sync</span><span class="tech-pill">Transit API</span></div></div>
+        </div>
+      </div>
+
+      <!-- ── PRIVACY PAGE ── -->
+      <div class="page" id="page-privacy">
+        <div class="privacy-grid">
+          <div class="privacy-card">
+            <div class="priv-icon" style="background:rgba(59,130,246,0.1)"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M10 2L3 5.5v5c0 4 3 7.5 7 8.7C17 18 20 14.5 20 10.5v-5L10 2Z" stroke="#3b82f6" stroke-width="1.5"/><path d="M7 10l2.3 2.3L13 8" stroke="#3b82f6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <div class="priv-title">Biometric data handling</div>
+            <div class="priv-desc">Facial recognition is strictly opt-in. All biometric processing happens on edge nodes — raw images never leave the device boundary. Analytics use anonymized crowd vectors only.</div>
+            <div class="priv-badge" style="background:rgba(59,130,246,0.1);color:var(--accent2)">On-device processing</div>
+          </div>
+          <div class="privacy-card">
+            <div class="priv-icon" style="background:rgba(34,197,94,0.1)"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><rect x="3" y="8" width="14" height="10" rx="2" stroke="#22c55e" stroke-width="1.5"/><path d="M7 8V6a3 3 0 0 1 6 0v2" stroke="#22c55e" stroke-width="1.5"/></svg></div>
+            <div class="priv-title">Regulatory compliance</div>
+            <div class="priv-desc">Full GDPR and India DPDP Act compliance. Attendees are shown a clear one-screen consent flow at app launch. Data is deleted within 24 hours of event close.</div>
+            <div class="priv-badge" style="background:rgba(34,197,94,0.1);color:var(--green)">GDPR · DPDP compliant</div>
+          </div>
+          <div class="privacy-card">
+            <div class="priv-icon" style="background:rgba(239,68,68,0.1)"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.5" stroke="#ef4444" stroke-width="1.5"/><path d="M10 6v4M10 13.5v.5" stroke="#ef4444" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+            <div class="priv-title">Emergency protocol</div>
+            <div class="priv-desc">In a declared emergency, FlowState overrides normal routing. AR evacuation paths are pushed to all active devices. Digital twin identifies lowest-density exit corridors in real time.</div>
+            <div class="priv-badge" style="background:rgba(239,68,68,0.1);color:var(--red)">Auto-override ready</div>
+          </div>
+          <div class="privacy-card">
+            <div class="priv-icon" style="background:rgba(245,158,11,0.1)"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.5" stroke="#f59e0b" stroke-width="1.5"/><path d="M7 10h6M10 7v6" stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+            <div class="priv-title">Accessibility</div>
+            <div class="priv-desc">Voice navigation mode, haptic reroute alerts, high-contrast UI, wheelchair-optimised routing with real-time elevator status. Complies with WCAG 2.1 AA and Indian Rights of PWD Act.</div>
+            <div class="priv-badge" style="background:rgba(245,158,11,0.1);color:var(--amber)">WCAG 2.1 AA · RPwD Act</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </main>
+</div>
+
+<script>
+// ── CLOCK ──
+function updateClock(){
+  const n=new Date();
+  const p=v=>String(v).padStart(2,'0');
+  document.getElementById('clock').textContent=`${p(n.getHours())}:${p(n.getMinutes())}:${p(n.getSeconds())} IST`;
+}
+setInterval(updateClock,1000); updateClock();
+
+// ── NAVIGATION ──
+const pageTitles={ops:'Operations Dashboard',alerts:'Live Alerts',arch:'System Architecture',fan:'Fan Companion App',journey:'User Journey',privacy:'Privacy & Safety'};
+function navigate(page,el){
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.getElementById('page-title').textContent=pageTitles[page]||page;
+}
+
+// ── ZONE BARS ──
+const zones=[
+  {name:'SW Stand',pct:98,c:'#ef4444'},
+  {name:'East Lower',pct:82,c:'#f59e0b'},
+  {name:'SE Stand',pct:79,c:'#f59e0b'},
+  {name:'NE Stand',pct:61,c:'#22c55e'},
+  {name:'West Lower',pct:58,c:'#22c55e'},
+  {name:'NW Stand',pct:43,c:'#22c55e'},
+];
+function renderZoneBars(){
+  document.getElementById('zone-bars-container').innerHTML=zones.map(z=>`
+    <div class="zone-row">
+      <span class="zone-name">${z.name}</span>
+      <div class="zone-track"><div class="zone-fill" style="width:${z.pct}%;background:${z.c}"></div></div>
+      <span class="zone-pct">${z.pct}%</span>
+    </div>`).join('');
+}
+renderZoneBars();
+
+// ── ALERTS ──
+const alertData=[
+  {level:'red',msg:'Gate D — SW stand critical (98%). Rerouting via Gates C & E.',time:'18:39',zone:'SW'},
+  {level:'amber',msg:'Concession E2 queue 11 min. Dynamic discount active at W3.',time:'18:37',zone:'E2'},
+  {level:'green',msg:'Half-time exit wave predicted in 4 min. Exit routing armed.',time:'18:35',zone:'SYS'},
+  {level:'amber',msg:'East Lower approaching high density (82%). Monitor.',time:'18:31',zone:'E-LWR'},
+  {level:'green',msg:'FlowCoins milestone: 3,800 issued. Engagement up 34%.',time:'18:28',zone:'APP'},
+];
+const alertColors={red:'var(--red)',amber:'var(--amber)',green:'var(--green)'};
+function renderAlerts(containerId, count){
+  const items=(count?alertData.slice(0,count):alertData);
+  document.getElementById(containerId).innerHTML=items.map(a=>`
+    <div class="alert-item">
+      <div class="alert-dot" style="background:${alertColors[a.level]}"></div>
+      <div class="alert-body">
+        <div class="alert-msg">${a.msg}</div>
+        <div class="alert-meta">
+          <span class="alert-tag">${a.time}</span>
+          <span class="alert-tag">Zone: ${a.zone}</span>
+        </div>
+      </div>
+    </div>`).join('');
+}
+renderAlerts('alerts-feed',3);
+renderAlerts('all-alerts-feed');
+
+// ── CONCESSIONS ──
+const concessions=[
+  {name:'Stand W3',type:'Hot dogs',wait:2,zone:'West'},
+  {name:'Stand N1',type:'Drinks',wait:6,zone:'North'},
+  {name:'Stand N2',type:'Snacks',wait:4,zone:'North'},
+  {name:'Stand E2',type:'Burgers',wait:11,zone:'East'},
+  {name:'Stand S1',type:'Pizza',wait:3,zone:'South'},
+];
+function waitColor(w){return w<=4?'rgba(34,197,94,0.12)':w<=7?'rgba(245,158,11,0.12)':'rgba(239,68,68,0.12)';}
+function waitText(w){return w<=4?'var(--green)':w<=7?'var(--amber)':'var(--red)';}
+document.getElementById('concessions-grid').innerHTML=concessions.map(c=>`
+  <div style="background:var(--bg3);border-radius:8px;padding:10px 12px;border:1px solid var(--border)">
+    <div style="font-size:11px;font-weight:500;color:var(--text)">${c.name}</div>
+    <div style="font-size:10px;color:var(--text3);margin-bottom:8px">${c.type} · ${c.zone}</div>
+    <div style="background:${waitColor(c.wait)};color:${waitText(c.wait)};font-size:12px;font-family:var(--mono);padding:4px 8px;border-radius:5px;text-align:center">${c.wait} min</div>
+  </div>`).join('');
+
+// ── LIVE METRICS UPDATE ──
+let tick=0;
+setInterval(()=>{
+  tick++;
+  const occ=Math.round(86+Math.sin(tick*0.3)*1.5);
+  document.getElementById('m-occ').textContent=occ+'%';
+  document.getElementById('m-occ-d').textContent=Math.round(occ*624)+' / 62,400';
+  document.getElementById('m-wait').textContent=(4.2+Math.sin(tick*0.5)*0.4).toFixed(1)+'m';
+  document.getElementById('m-reroute').textContent=12+Math.round(Math.sin(tick*0.7)*2);
+  document.getElementById('m-coins').textContent=(3841+tick*3).toLocaleString();
+},1800);
+
+// ── TOOLTIP ──
+function showTip(e,zone,pct,detail){
+  const t=document.getElementById('tooltip');
+  const wrap=e.currentTarget.closest('.stadium-wrap');
+  const rect=wrap.getBoundingClientRect();
+  t.innerHTML=`<div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:3px">${zone}</div><div style="font-size:11px;color:var(--text2)">${detail}</div><div style="font-size:11px;font-family:var(--mono);color:${parseInt(pct)>90?'var(--red)':parseInt(pct)>75?'var(--amber)':'var(--green)'};margin-top:4px">${pct} capacity</div>`;
+  const me=e; const bRect=e.currentTarget.getBoundingClientRect();
+  t.style.left=(bRect.left-rect.left+bRect.width/2)+'px';
+  t.style.top=(bRect.top-rect.top-76)+'px';
+  t.style.transform='translateX(-50%)';
+  t.classList.add('show');
+}
+function hideTip(){document.getElementById('tooltip').classList.remove('show');}
+
+// ── EMERGENCY ──
+let emergencyOn=false;
+function toggleEmergency(){
+  emergencyOn=!emergencyOn;
+  document.body.style.outline=emergencyOn?'3px solid var(--red)':'none';
+  alert(emergencyOn?'EMERGENCY MODE ACTIVE — AR evacuation routes pushed to all 2,104 active devices.':'Emergency mode deactivated. Normal routing resumed.');
+}
+
+// ── EXPORT ──
+function exportReport(){alert('Report exported: FlowState_Ops_Report_'+new Date().toISOString().slice(0,10)+'.pdf\n\nIn production this downloads a full PDF with crowd analytics, incident log, and performance KPIs.');}
+</script>
+</body>
+</html>
