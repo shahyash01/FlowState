@@ -18,7 +18,8 @@ const hostname = dev ? 'localhost' : '0.0.0.0';
 const port = process.env.PORT || 3000;
 
 // when using middleware `hostname` and `port` must be provided below
-const app = next({ dev, hostname: 'localhost', port });
+// In production (Cloud Run/Docker), bind to 0.0.0.0 so the container accepts traffic
+const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
 
 app.prepare().then(() => {

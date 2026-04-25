@@ -68,9 +68,8 @@ logs/
 .turbo/
 
 # Deployment & Docker
-Dockerfile
-.dockerignore
-apphosting.yaml
+# NOTE: Dockerfile, .dockerignore, and apphosting.yaml must NOT be ignored
+# Cloud Build/Firebase App Hosting need these files from the repository
 
 # Workspace build artifacts
 apps/**/.next/
