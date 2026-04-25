@@ -14,11 +14,11 @@ const { startNarrator } = require('./intelligence/narrator');
 const createAiRouter = require('./routes/ai');
 
 const dev = process.env.NODE_ENV !== 'production';
-const hostname = 'localhost';
+const hostname = dev ? 'localhost' : '0.0.0.0';
 const port = process.env.PORT || 3000;
 
 // when using middleware `hostname` and `port` must be provided below
-const app = next({ dev, hostname, port });
+const app = next({ dev, hostname: 'localhost', port });
 const handle = app.getRequestHandler();
 
 app.prepare().then(() => {
@@ -77,7 +77,7 @@ app.prepare().then(() => {
     io.emit('narrative:update', narrative);
   });
 
-  server.listen(port, () => {
+  server.listen(port, hostname, () => {
     console.log(`> Ready on http://${hostname}:${port}`);
     console.log(`> Starting FlowState for ${store.getState().venue.name}`);
   });

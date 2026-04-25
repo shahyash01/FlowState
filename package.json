@@ -7,10 +7,7 @@
     "build": "next build",
     "start": "node server.js",
     "lint": "eslint",
-    "deploy": "echo 'Deploy via Railway — connect GitHub repo at railway.app'"
-  },
-  "engines": {
-    "node": ">=20.0.0"
+    "deploy": "echo 'Please use the Firebase Console to set up App Hosting for this repository.'"
   },
   "dependencies": {
     "@google/genai": "^1.50.1",
