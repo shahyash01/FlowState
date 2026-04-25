@@ -1,5 +1,5 @@
 # FlowState — Code CLI Prompt
-# Paste this entire prompt into Claude Code to build the full end-to-end project
+# Paste this entire prompt into Gemini CLI to build the full end-to-end project
 
 ---
 

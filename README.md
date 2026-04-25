@@ -6,8 +6,33 @@ FlowState is a real-time, event-driven platform for managing large-scale sportin
 
 ```bash
 npm install
+cp .env.example .env
+# Edit .env with your GEMINI_API_KEY
 npm start
 ```
+
+## Security & Deployment
+
+### Environment Variables
+This project uses environment variables for sensitive data. **Never commit `.env` files to version control.**
+
+Required variables:
+- `GEMINI_API_KEY`: Your Google AI Studio API key.
+- `JWT_SECRET`: A secure string for signing JSON Web Tokens.
+
+### Firebase Deployment
+When deploying to Firebase (via Cloud Functions or App Hosting), you must set these secrets securely using the Google Cloud Secret Manager.
+
+#### Setting Secrets via Firebase CLI:
+```bash
+# Set Gemini API Key
+firebase functions:secrets:set GEMINI_API_KEY
+
+# Set JWT Secret
+firebase functions:secrets:set JWT_SECRET
+```
+
+For **Firebase App Hosting**, you can configure secrets in the Firebase Console under the App Hosting settings or via your `apphosting.yaml` (if used).
 
 ## Routes
 

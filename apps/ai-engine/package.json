@@ -1,0 +1,18 @@
+{
+  "name": "@flowstate/ai-engine",
+  "version": "1.0.0",
+  "main": "src/worker.js",
+  "scripts": {
+    "dev": "nodemon src/worker.js",
+    "start": "node src/worker.js"
+  },
+  "dependencies": {
+    "@flowstate/store": "*",
+    "@flowstate/intelligence": "*",
+    "socket.io-client": "^4.8.3",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}

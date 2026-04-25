@@ -11,7 +11,7 @@ export default function Dashboard() {
   const [emergencyMode, setEmergencyMode] = useState(false);
 
   useEffect(() => {
-    const socket = io();
+    const socket = io('http://localhost:3000');
     window._flowstateSocket = socket;
     socket.on('state', (newState) => {
       setState(newState);
@@ -35,7 +35,7 @@ export default function Dashboard() {
 
   const toggleEmergency = async () => {
     if (!emergencyMode) {
-      await fetch('/api/emergency', { method: 'POST' });
+      await fetch('http://localhost:3000/api/emergency', { method: 'POST' });
       setEmergencyMode(true);
       document.body.classList.add('emergency-mode');
       alert('EMERGENCY MODE ACTIVE — AR evacuation routes pushed to all active devices.');
@@ -57,10 +57,7 @@ export default function Dashboard() {
     arch: 'System Architecture',
     fan: 'Fan Companion App',
     journey: 'User Journey',
-    privacy: 'Privacy & Safety',
-    vision: 'Vision & Future',
-    roadmap: 'Future Roadmap',
-    judges: 'Under the Hood (For Judges)'
+    privacy: 'Privacy & Safety'
   };
 
   const waitColor = (w) => w <= 4 ? 'rgba(34,197,94,0.12)' : w <= 7 ? 'rgba(245,158,11,0.12)' : 'rgba(239,68,68,0.12)';
@@ -206,23 +203,6 @@ export default function Dashboard() {
               <path d="M5.5 8l1.8 1.8L10.5 6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             Privacy & Safety
-          </button>
-        </div>
-
-        <div className="nav-section" style={{ marginTop: '12px' }}>
-          <div className="nav-label">Roadmap</div>
-          <button className={`nav-item ${activePage === 'vision' ? 'active' : ''}`} onClick={() => setActivePage('vision')}>
-            <svg viewBox="0 0 16 16" fill="none">
-              <path d="M8 2L14 14H2L8 2Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/>
-              <path d="M8 8V12" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-            </svg>
-            Vision & Impact
-          </button>
-          <button className={`nav-item ${activePage === 'roadmap' ? 'active' : ''}`} onClick={() => setActivePage('roadmap')}>
-            <svg viewBox="0 0 16 16" fill="none">
-              <path d="M2 12L6 4L10 8L13 5L15 10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            Future Roadmap
           </button>
         </div>
 
@@ -406,44 +386,53 @@ export default function Dashboard() {
 
           <div className={`page ${activePage === 'arch' ? 'active' : ''}`}>
             <div className="panel">
-              <div className="panel-title">System architecture — FlowState Integrated Monolith</div>
-              <div style={{ marginBottom: '20px', color: 'var(--text2)', lineHeight: '1.6', fontSize: '14px' }}>
-                FlowState is built on a high-performance integrated architecture, designed to handle up to 60,000 concurrent connections. The unified backend powers both the operations dashboard and the fan application simultaneously, driven by a predictive AI engine.
-              </div>
+              <div className="panel-title">System architecture — FlowState layers</div>
               <div className="arch-layers">
                 <div className="arch-layer">
-                  <div className="arch-label">IoT / Edge Sensors</div>
+                  <div className="arch-label">IoT / Sensors</div>
                   <div className="arch-nodes">
-                    <div className="arch-node" style={{ borderColor: 'rgba(59,130,246,0.3)', color: 'var(--accent2)' }}>Smart CV Cameras</div>
-                    <div className="arch-node" style={{ borderColor: 'rgba(59,130,246,0.3)', color: 'var(--accent2)' }}>BLE / LiDAR Sensors</div>
-                    <div className="arch-node" style={{ borderColor: 'rgba(59,130,246,0.3)', color: 'var(--accent2)' }}>RFID Scanners</div>
+                    <div className="arch-node" style={{ borderColor: 'rgba(59,130,246,0.3)', color: 'var(--accent2)' }}>Smart cameras (CV)</div>
+                    <div className="arch-node" style={{ borderColor: 'rgba(59,130,246,0.3)', color: 'var(--accent2)' }}>BLE beacons</div>
+                    <div className="arch-node" style={{ borderColor: 'rgba(59,130,246,0.3)', color: 'var(--accent2)' }}>RFID gates</div>
+                    <div className="arch-node" style={{ borderColor: 'rgba(59,130,246,0.3)', color: 'var(--accent2)' }}>Pressure mats</div>
+                    <div className="arch-node" style={{ borderColor: 'rgba(59,130,246,0.3)', color: 'var(--accent2)' }}>LiDAR depth sensors</div>
                   </div>
                 </div>
                 <div className="arch-arrow">↓</div>
                 <div className="arch-layer">
-                  <div className="arch-label">Real-Time Core</div>
+                  <div className="arch-label">Edge Computing</div>
                   <div className="arch-nodes">
-                    <div className="arch-node" style={{ borderColor: 'rgba(245,158,11,0.3)', color: 'var(--amber)' }}>Node.js / Express</div>
-                    <div className="arch-node" style={{ borderColor: 'rgba(245,158,11,0.3)', color: 'var(--amber)' }}>Socket.IO Events</div>
-                    <div className="arch-node" style={{ borderColor: 'rgba(245,158,11,0.3)', color: 'var(--amber)' }}>In-Memory Store</div>
+                    <div className="arch-node" style={{ borderColor: 'rgba(20,184,166,0.35)', color: 'var(--teal)' }}>NVIDIA Jetson nodes</div>
+                    <div className="arch-node" style={{ borderColor: 'rgba(20,184,166,0.35)', color: 'var(--teal)' }}>On-device CV inference</div>
+                    <div className="arch-node" style={{ borderColor: 'rgba(20,184,166,0.35)', color: 'var(--teal)' }}>Anonymized heat maps</div>
                   </div>
                 </div>
                 <div className="arch-arrow">↓</div>
                 <div className="arch-layer">
-                  <div className="arch-label">Intelligence Engine</div>
+                  <div className="arch-label">Network</div>
                   <div className="arch-nodes">
-                    <div className="arch-node" style={{ borderColor: 'rgba(168,85,247,0.3)', color: '#c084fc' }}>Gemini AI Predictor</div>
-                    <div className="arch-node" style={{ borderColor: 'rgba(168,85,247,0.3)', color: '#c084fc' }}>Anomaly Detection</div>
-                    <div className="arch-node" style={{ borderColor: 'rgba(168,85,247,0.3)', color: '#c084fc' }}>Gamification Logic</div>
+                    <div className="arch-node" style={{ borderColor: 'rgba(245,158,11,0.3)', color: 'var(--amber)' }}>Private 5G backbone</div>
+                    <div className="arch-node" style={{ borderColor: 'rgba(245,158,11,0.3)', color: 'var(--amber)' }}>Wi-Fi 6E failover</div>
                   </div>
                 </div>
                 <div className="arch-arrow">↓</div>
                 <div className="arch-layer">
-                  <div className="arch-label">Client Interfaces</div>
+                  <div className="arch-label">Cloud / Backend</div>
                   <div className="arch-nodes">
-                    <div className="arch-node" style={{ borderColor: 'rgba(34,197,94,0.3)', color: 'var(--green)' }}>Next.js App Router</div>
-                    <div className="arch-node" style={{ borderColor: 'rgba(34,197,94,0.3)', color: 'var(--green)' }}>Digital Twin UI</div>
-                    <div className="arch-node" style={{ borderColor: 'rgba(34,197,94,0.3)', color: 'var(--green)' }}>Mobile Fan App</div>
+                    <div className="arch-node" style={{ borderColor: 'rgba(168,85,247,0.3)', color: '#c084fc' }}>Kubernetes on AWS</div>
+                    <div className="arch-node" style={{ borderColor: 'rgba(168,85,247,0.3)', color: '#c084fc' }}>Redis real-time cache</div>
+                    <div className="arch-node" style={{ borderColor: 'rgba(168,85,247,0.3)', color: '#c084fc' }}>AI prediction engine</div>
+                    <div className="arch-node" style={{ borderColor: 'rgba(168,85,247,0.3)', color: '#c084fc' }}>Digital twin renderer</div>
+                  </div>
+                </div>
+                <div className="arch-arrow">↓</div>
+                <div className="arch-layer">
+                  <div className="arch-label">Client Layer</div>
+                  <div className="arch-nodes">
+                    <div className="arch-node" style={{ borderColor: 'rgba(34,197,94,0.3)', color: 'var(--green)' }}>FlowState Web Dashboard</div>
+                    <div className="arch-node" style={{ borderColor: 'rgba(34,197,94,0.3)', color: 'var(--green)' }}>React Native fan app</div>
+                    <div className="arch-node" style={{ borderColor: 'rgba(34,197,94,0.3)', color: 'var(--green)' }}>ARCore / ARKit</div>
+                    <div className="arch-node" style={{ borderColor: 'rgba(34,197,94,0.3)', color: 'var(--green)' }}>PA system integration</div>
                   </div>
                 </div>
               </div>
@@ -627,98 +616,6 @@ export default function Dashboard() {
                  <div className="priv-title">Accessibility</div>
                  <div className="priv-desc">Voice navigation mode, haptic reroute alerts, high-contrast UI, wheelchair-optimised routing with real-time elevator status. Complies with WCAG 2.1 AA and Indian Rights of PWD Act.</div>
                  <div className="priv-badge" style={{ background: 'rgba(245,158,11,0.1)', color: 'var(--amber)' }}>WCAG 2.1 AA · RPwD Act</div>
-               </div>
-             </div>
-          </div>
-
-          <div className={`page ${activePage === 'vision' ? 'active' : ''}`}>
-             <div className="panel" style={{ marginBottom: '16px' }}>
-               <div className="panel-title" style={{ fontSize: '20px', marginBottom: '12px' }}>Real-World Application & Problem Solving</div>
-               <div style={{ color: 'var(--text2)', lineHeight: '1.6', fontSize: '15px' }}>
-                  <p style={{ marginBottom: '16px' }}><strong style={{ color: 'var(--text)' }}>The Problem:</strong> Modern stadiums face severe bottlenecks during peak ingress and egress, leading to fan frustration, safety hazards, and lost concession revenue. Traditional management systems are reactive, siloed, and lack real-time predictive capabilities.</p>
-                  <p><strong style={{ color: 'var(--text)' }}>The Solution:</strong> FlowState unifies IoT sensors, real-time edge processing, and predictive AI into a single "stadium brain." It proactively redistributes crowd flow using live digital twin mapping, incentivizes off-peak movements with a gamified token economy (FlowCoins), and predicts bottlenecks before they occur.</p>
-               </div>
-             </div>
-             
-             <div className="panel" style={{ marginTop: '16px' }}>
-               <div className="panel-title" style={{ fontSize: '20px', marginBottom: '16px' }}>For Hackathon Judges: How This Demo Works</div>
-               <div style={{ color: 'var(--text2)', lineHeight: '1.6', fontSize: '15px' }}>
-                  <p style={{ marginBottom: '16px' }}><strong style={{ color: 'var(--text)' }}>The Simulator (simulator.js):</strong> Since we cannot test this in a live 60,000-seat stadium, a Node.js background process generates realistic real-time telemetry—simulating thousands of fans moving between zones, purchasing concessions, and creating dynamic congestion events.</p>
-                  <p style={{ marginBottom: '16px' }}><strong style={{ color: 'var(--text)' }}>Real-Time Data Layer:</strong> The simulator streams state changes via Socket.IO to the React dashboard at 1-second intervals, mimicking live IoT sensor feeds.</p>
-                  <p style={{ marginBottom: '16px' }}><strong style={{ color: 'var(--text)' }}>Gemini AI Intelligence:</strong> Our backend leverages the Google Gemini AI API to actively analyze the stream of simulated data. It generates natural language anomaly reports, identifies crowding trends, and dynamically creates predictive insights.</p>
-                  <p><strong style={{ color: 'var(--text)' }}>The Frontend:</strong> A responsive Next.js application that renders the digital twin visualization and interprets the simulated data into actionable operational metrics and fan-facing gamification features.</p>
-               </div>
-             </div>
-          </div>
-
-          <div className={`page ${activePage === 'roadmap' ? 'active' : ''}`}>
-             <div className="panel" style={{ marginBottom: '16px' }}>
-               <div className="panel-title" style={{ fontSize: '22px', marginBottom: '8px' }}>Future Roadmap & Upcoming Implementations</div>
-               <div style={{ color: 'var(--text2)', fontSize: '14px', lineHeight: '1.6' }}>These are the next planned phases of FlowState beyond this hackathon build. Each feature is designed to make the platform more predictive, immersive, and operationally powerful at real-world scale.</div>
-             </div>
-             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-               <div className="panel" style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
-                 <div style={{ fontSize: '36px', flexShrink: 0, marginTop: '4px' }}>🚀</div>
-                 <div style={{ flex: 1 }}>
-                   <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--accent2)', marginBottom: '6px' }}>Immersive AR Navigation for Attendees</div>
-                   <div style={{ color: 'var(--text2)', lineHeight: '1.7', fontSize: '14px', marginBottom: '10px' }}>Attendees open the FlowState fan app, point their camera at any corridor, and see glowing directional arrows projected over the real environment — guiding them to their seat, the shortest concession queue, or the nearest restroom. In emergency scenarios, bright red AR evacuation paths are instantly broadcast to every active device in the stadium.</div>
-                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                     <span className="tech-pill">ARCore / ARKit</span>
-                     <span className="tech-pill">BLE Indoor Positioning</span>
-                     <span className="tech-pill">WebXR API</span>
-                     <span className="tech-pill">React Native</span>
-                   </div>
-                 </div>
-               </div>
-               <div className="panel" style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
-                 <div style={{ fontSize: '36px', flexShrink: 0, marginTop: '4px' }}>🤖</div>
-                 <div style={{ flex: 1 }}>
-                   <div style={{ fontSize: '16px', fontWeight: 600, color: '#c084fc', marginBottom: '6px' }}>AI Staff Allocation & Admin Control Panel</div>
-                   <div style={{ color: 'var(--text2)', lineHeight: '1.7', fontSize: '14px', marginBottom: '10px' }}>An advanced admin panel that pipes Gemini AI predictions directly into staff dispatch workflows. The system will proactively recommend deploying additional security or hospitality staff to a zone 15 minutes before a predicted surge, with one-tap confirmation for supervisors. Over time, it will learn from historical event data to auto-optimize staffing rosters and predict demand for concessions, parking, and medical services.</div>
-                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                     <span className="tech-pill">Gemini 2.0 Flash</span>
-                     <span className="tech-pill">Push Notifications</span>
-                     <span className="tech-pill">Workforce Management API</span>
-                     <span className="tech-pill">Historical ML Models</span>
-                   </div>
-                 </div>
-               </div>
-               <div className="panel" style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
-                 <div style={{ fontSize: '36px', flexShrink: 0, marginTop: '4px' }}>⚡</div>
-                 <div style={{ flex: 1 }}>
-                   <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--amber)', marginBottom: '6px' }}>Dynamic Smart Ticketing</div>
-                   <div style={{ color: 'var(--text2)', lineHeight: '1.7', fontSize: '14px', marginBottom: '10px' }}>Tickets will carry a "recommended gate" field that silently updates in real time based on the fan's travel origin, live traffic conditions, and current entry gate congestion. If Gate D is becoming overwhelmed, the system reroutes incoming ticket holders to Gate B or C before they even arrive — preventing bottlenecks from forming in the first place rather than reacting after they occur.</div>
-                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                     <span className="tech-pill">Dynamic QR Codes</span>
-                     <span className="tech-pill">Google Maps API</span>
-                     <span className="tech-pill">Pre-arrival Push Alerts</span>
-                   </div>
-                 </div>
-               </div>
-               <div className="panel" style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
-                 <div style={{ fontSize: '36px', flexShrink: 0, marginTop: '4px' }}>🌍</div>
-                 <div style={{ flex: 1 }}>
-                   <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--green)', marginBottom: '6px' }}>City Transit & Infrastructure Integration</div>
-                   <div style={{ color: 'var(--text2)', lineHeight: '1.7', fontSize: '14px', marginBottom: '10px' }}>FlowState will integrate directly with city metro APIs and bus scheduling systems to coordinate egress waves with live public transport availability. Rather than releasing 60,000 fans simultaneously, the platform orchestrates staggered departure nudges — synced with train and bus arrivals — preventing transit hubs from being overwhelmed after the final whistle.</div>
-                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                     <span className="tech-pill">City Metro API</span>
-                     <span className="tech-pill">PA System Sync</span>
-                     <span className="tech-pill">Dynamic Signage</span>
-                     <span className="tech-pill">Transit Real-time API</span>
-                   </div>
-                 </div>
-               </div>
-               <div className="panel" style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
-                 <div style={{ fontSize: '36px', flexShrink: 0, marginTop: '4px' }}>📊</div>
-                 <div style={{ flex: 1 }}>
-                   <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--teal)', marginBottom: '6px' }}>Multi-Event & Multi-Venue Federation</div>
-                   <div style={{ color: 'var(--text2)', lineHeight: '1.7', fontSize: '14px', marginBottom: '10px' }}>A federated operations hub allowing a single operator to oversee multiple venues simultaneously during concurrent events. Shared FlowCoin economy across venues, cross-event predictive analytics, and a centralized incident command dashboard for city-wide sporting events such as the Olympics or IPL playoffs.</div>
-                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                     <span className="tech-pill">Multi-tenant Architecture</span>
-                     <span className="tech-pill">Federated GraphQL</span>
-                     <span className="tech-pill">Central Command UI</span>
-                   </div>
-                 </div>
                </div>
              </div>
           </div>
