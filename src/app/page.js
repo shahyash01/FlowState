@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import io from 'socket.io-client';
+import Script from 'next/script';
 
 export default function Dashboard() {
   const [activePage, setActivePage] = useState('ops');
@@ -11,6 +12,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     const socket = io();
+    window._flowstateSocket = socket;
     socket.on('state', (newState) => {
       setState(newState);
       if (newState.zones && newState.zones[0]?.status === 'emergency') {
@@ -343,7 +345,7 @@ export default function Dashboard() {
                       const pct = Math.round((z.current / z.capacity) * 100);
                       const color = pct > 90 ? '#ef4444' : pct > 75 ? '#f59e0b' : '#22c55e';
                       return (
-                        <div className="zone-row" key={i}>
+                        <div className="zone-row" key={i} data-zone-id={z.id}>
                           <span className="zone-name">{z.name}</span>
                           <div className="zone-track"><div className="zone-fill" style={{ width: `${pct}%`, background: color }}></div></div>
                           <span className="zone-pct">{pct}%</span>
@@ -619,6 +621,7 @@ export default function Dashboard() {
           </div>
         </div>
       </main>
+      <Script src="/js/ai-panel.js" strategy="afterInteractive" />
     </div>
   );
 }
